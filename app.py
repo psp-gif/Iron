@@ -1,7 +1,14 @@
 from flask import Flask, render_template, abort
+from ai_routes import ai_blueprint, limiter
 from catalog import PRODUCTS
 
 app = Flask(__name__)
+
+# Ограничиваем размер входящих запросов.
+app.config["MAX_CONTENT_LENGTH"] = 64 * 1024
+
+limiter.init_app(app)
+app.register_blueprint(ai_blueprint)
 
 @app.template_filter("money")
 def money(value):

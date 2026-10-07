@@ -1,1 +1,58 @@
-{% extends 'base.html' %}{% block content %}<section class="section page"><p class="eyebrow">СЛЕДУЮЩИЙ ЭТАП · ПОДКЛЮЧЕНИЕ API</p><h1 class="page-title">{{ 'Продать свой ПК' if request.args.get('mode') == 'sell' else 'ИИ-помощник Iron' }}</h1><div class="notice"><h2>Здесь появится твой помощник.</h2><p>Он поможет выбрать компьютер, уточнит получение заказа или соберёт заявку на выкуп.</p><p class="muted">В версии 1.0 чат ещё не подключён. Заказы и заявки не отправляются.</p><a class="button" href="/catalog">Посмотреть компьютеры ↗</a></div></section>{% endblock %}
+{% extends 'base.html' %}
+
+{% block title %}ИИ-помощник — Iron{% endblock %}
+
+{% block scripts %}
+<script defer src="{{ url_for('static', filename='js/assistant.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<section class="section page">
+    <p class="eyebrow">ПОМОЖЕМ РАЗОБРАТЬСЯ</p>
+    <h1 class="page-title">Помощник Iron</h1>
+
+    <p class="muted">
+        Подбор по каталогу и ответы о компьютерах.
+        Оформление заказов и выкуп пока недоступны.
+        Не отправляй личные данные.
+    </p>
+
+    <div class="chat-panel">
+        <div class="chat-top">
+            <span><span class="dot"></span>Консультант Iron</span>
+            <button id="new-chat" class="small-button" type="button">
+                Новый чат
+            </button>
+        </div>
+
+        <div id="chat-messages" class="chat-messages"
+             role="log" aria-live="polite"
+             aria-label="Сообщения чата">
+            <div class="chat-message assistant">
+                Привет! Для каких задач нужен компьютер
+                и какой бюджет рассматриваешь?
+            </div>
+        </div>
+
+        <div id="chat-status" class="chat-status"
+             role="status" aria-live="polite"></div>
+
+        <form id="chat-form" class="chat-form">
+            <label class="muted" for="chat-input">Твоё сообщение</label>
+
+            <textarea id="chat-input"
+                      maxlength="2000"
+                      rows="3"
+                      placeholder="Нужен игровой ПК до 450 000 ₸"
+                      required></textarea>
+
+            <div class="chat-actions">
+                <small>Enter — отправить · Shift + Enter — новая строка</small>
+                <button id="chat-send" class="button" type="submit">
+                    Отправить ↗
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

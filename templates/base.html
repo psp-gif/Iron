@@ -1,9 +1,142 @@
 <!doctype html>
 <html lang="ru" data-theme="dark">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}Iron — компьютеры для твоих задач{% endblock %}</title>
-<script>try{document.documentElement.dataset.theme=localStorage.getItem('iron-theme')==='light'?'light':'dark'}catch(e){}</script>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-<script defer src="{{ url_for('static', filename='js/main.js') }}"></script><script defer src="{{ url_for('static', filename='js/cart.js') }}"></script>{% block scripts %}{% endblock %}</head>
-<body><header class="header"><button class="icon-button" id="menu-open" aria-label="Открыть меню" aria-expanded="false" aria-controls="drawer">☰</button><a class="logo" href="/">Iron<span>●</span></a><form class="header-search" action="/catalog"><input name="q" aria-label="Поиск компьютеров" placeholder="Найти свой компьютер"><button aria-label="Искать">⌕</button></form><button class="icon-button theme-toggle" aria-label="Переключить тему">◐</button><a class="cart-link" href="/cart">Корзина <span class="cart-count">0</span></a></header>
-<div id="overlay" class="overlay" hidden></div><aside id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="menu-title" hidden><div class="drawer-top"><span class="logo" id="menu-title">Iron<span>●</span></span><button id="menu-close" class="icon-button" aria-label="Закрыть меню">×</button></div><p class="eyebrow">ТВОЙ СЛЕДУЮЩИЙ ПК</p><nav>{% for href,label in [('/', 'Главная'),('/catalog','Каталог'),('/assistant','ИИ-помощник'),('/assistant?mode=sell','Продать свой ПК'),('/cart','Корзина')] %}<a href="{{ href }}" {% if request.full_path.rstrip('?') == href %}class="active" aria-current="page"{% endif %}>{{ label }}<span>↗</span></a>{% endfor %}</nav><div class="drawer-bottom"><a href="/info">Доставка и гарантия</a><button class="theme-toggle">Сменить тему ◐</button><small>Заказы и профиль появятся после подключения БД.</small></div></aside>
-<main>{% block content %}{% endblock %}</main><footer><a class="logo" href="/">Iron<span>●</span></a><span>Компьютеры для твоих задач.</span><a href="/info">Условия магазина</a><small>Учебный проект · версия 1.0 · демонстрационные цены</small></footer><div id="toast" class="toast" role="status" aria-live="polite"></div></body></html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>{% block title %}Iron — компьютеры для твоих задач{% endblock %}</title>
+
+    <script>
+        try {
+            document.documentElement.dataset.theme =
+                localStorage.getItem("iron-theme") === "light"
+                    ? "light"
+                    : "dark";
+        } catch (error) {}
+    </script>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}?v=3">
+
+    <script defer
+            src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <script defer
+            src="{{ url_for('static', filename='js/cart.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
+</head>
+
+<body>
+    <header class="header">
+        <button class="icon-button"
+                id="menu-open"
+                type="button"
+                aria-label="Открыть меню"
+                aria-expanded="false"
+                aria-controls="drawer">
+            ☰
+        </button>
+
+        <a class="logo" href="/">
+            Iron<span>●</span>
+        </a>
+
+        <form class="header-search" action="/catalog">
+            <input name="q"
+                   aria-label="Поиск компьютеров"
+                   placeholder="Найти свой компьютер">
+
+            <button type="submit" aria-label="Искать">⌕</button>
+        </form>
+
+        <button class="icon-button theme-toggle"
+                type="button"
+                aria-label="Переключить тему">
+            ◐
+        </button>
+
+        <a class="cart-link" href="/cart">
+            Корзина <span class="cart-count">0</span>
+        </a>
+    </header>
+
+    <div id="overlay" class="overlay" hidden></div>
+
+    <aside id="drawer"
+           class="drawer"
+           role="dialog"
+           aria-modal="true"
+           aria-labelledby="menu-title"
+           hidden>
+
+        <div class="drawer-top">
+            <span class="logo" id="menu-title">
+                Iron<span>●</span>
+            </span>
+
+            <button id="menu-close"
+                    class="icon-button"
+                    type="button"
+                    aria-label="Закрыть меню">
+                ×
+            </button>
+        </div>
+
+        <p class="eyebrow">ТВОЙ СЛЕДУЮЩИЙ ПК</p>
+
+        <nav>
+            {% for href, label in [
+                ('/', 'Главная'),
+                ('/catalog', 'Каталог'),
+                ('/assistant', 'ИИ-помощник'),
+                ('/assistant?mode=sell', 'Продать свой ПК'),
+                ('/cart', 'Корзина')
+            ] %}
+                <a href="{{ href }}"
+                   {% if request.full_path.rstrip('?') == href %}
+                       class="active"
+                       aria-current="page"
+                   {% endif %}>
+                    {{ label }}
+                    <span>↗</span>
+                </a>
+            {% endfor %}
+        </nav>
+
+        <div class="drawer-bottom">
+            <a href="/info">Доставка и гарантия</a>
+
+            <button class="theme-toggle" type="button">
+                Сменить тему ◐
+            </button>
+
+            <small>
+                Заказы и профиль появятся после подключения БД.
+            </small>
+        </div>
+    </aside>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <a class="logo" href="/">
+            Iron<span>●</span>
+        </a>
+
+        <span>Компьютеры для твоих задач.</span>
+        <a href="/info">Условия магазина</a>
+
+        <small>
+            Учебный проект · версия 1.0 · демонстрационные цены
+        </small>
+    </footer>
+
+    <div id="toast"
+         class="toast"
+         role="status"
+         aria-live="polite"></div>
+</body>
+</html>

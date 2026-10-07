@@ -19,15 +19,32 @@ function saveCart() {
   updateCount();
 }
 updateCount();
-document.querySelectorAll('.add-cart').forEach(button => button.addEventListener('click', () => {
-  const id = button.dataset.id;
-  if ((cart[id] || 0) >= 10) { window.showToast('Лимит — 10 штук одной сборки.'); return; }
-  cart[id] = (cart[id] || 0) + 1; saveCart();
-  const counter = document.querySelector('.cart-count');
-  counter.classList.remove('bump'); void counter.offsetWidth; counter.classList.add('bump');
-  window.showToast('Компьютер добавлен в корзину');
-}));
-const cartPage = document.querySelector('#cart-page');
+// Обрабатывает и обычные кнопки, и появившиеся позже в чате.
+document.addEventListener("click", (event) => {
+    const button = event.target.closest(".add-cart");
+
+    if (!button) return;
+
+    const id = button.dataset.id;
+
+    if (!/^\d+$/.test(id || "")) return;
+
+    if ((cart[id] || 0) >= 10) {
+        window.showToast("Лимит — 10 штук одной сборки.");
+        return;
+    }
+
+    cart[id] = (cart[id] || 0) + 1;
+    saveCart();
+
+    const counter = document.querySelector(".cart-count");
+
+    counter.classList.remove("bump");
+    void counter.offsetWidth;
+    counter.classList.add("bump");
+
+    window.showToast("Компьютер добавлен в корзину");
+});
 const money = amount => new Intl.NumberFormat('ru-RU').format(amount) + ' ₸';
 // Пользовательский текст вставляем через textContent, не через HTML.
 function element(tag, className, text) {
