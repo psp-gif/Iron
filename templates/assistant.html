@@ -1,54 +1,127 @@
 {% extends 'base.html' %}
 
-{% block title %}ИИ-помощник — Iron{% endblock %}
+{% set selling = request.args.get('mode') == 'sell' %}
+
+{% block title %}
+    {% if selling %}
+        Продать свой ПК — Iron
+    {% else %}
+        ИИ-помощник — Iron
+    {% endif %}
+{% endblock %}
 
 {% block scripts %}
-<script defer src="{{ url_for('static', filename='js/assistant.js') }}"></script>
+<script
+    defer
+    src="{{ url_for('static', filename='js/assistant.js') }}?v=4"
+></script>
 {% endblock %}
 
 {% block content %}
 <section class="section page">
-    <p class="eyebrow">ПОМОЖЕМ РАЗОБРАТЬСЯ</p>
-    <h1 class="page-title">Помощник Iron</h1>
-
-    <p class="muted">
-        Подбор по каталогу и ответы о компьютерах.
-        Оформление заказов и выкуп пока недоступны.
-        Не отправляй личные данные.
+    <p class="eyebrow">
+        {% if selling %}
+            ВТОРАЯ ЖИЗНЬ ЖЕЛЕЗА
+        {% else %}
+            ПОМОЖЕМ РАЗОБРАТЬСЯ
+        {% endif %}
     </p>
 
-    <div class="chat-panel">
+    <h1 class="page-title">
+        {% if selling %}
+            Продать свой ПК
+        {% else %}
+            Помощник Iron
+        {% endif %}
+    </h1>
+
+    <p class="muted">
+        {% if selling %}
+            Расскажи о комплектации и состоянии компьютера.
+            Помощник уточнит характеристики и объяснит порядок выкупа.
+            Расчёт оценки и отправку заявки подключим позже.
+        {% else %}
+            Подбор компьютера по задачам и бюджету,
+            сравнение сборок и ответы об условиях Iron.
+        {% endif %}
+    </p>
+
+    <div
+        id="chat-panel"
+        class="chat-panel"
+        data-mode="{{ 'sell' if selling else 'consult' }}"
+    >
         <div class="chat-top">
-            <span><span class="dot"></span>Консультант Iron</span>
-            <button id="new-chat" class="small-button" type="button">
+            <span>
+                <span class="dot"></span>
+                {% if selling %}
+                    Помощник по выкупу Iron
+                {% else %}
+                    Консультант Iron
+                {% endif %}
+            </span>
+
+            <button
+                id="new-chat"
+                class="small-button"
+                type="button"
+            >
                 Новый чат
             </button>
         </div>
 
-        <div id="chat-messages" class="chat-messages"
-             role="log" aria-live="polite"
-             aria-label="Сообщения чата">
+        <div
+            id="chat-messages"
+            class="chat-messages"
+            role="log"
+            aria-live="polite"
+            aria-label="Сообщения чата"
+        >
             <div class="chat-message assistant">
-                Привет! Для каких задач нужен компьютер
-                и какой бюджет рассматриваешь?
+                {% if selling %}
+                    Привет! Помогу разобраться с выкупом твоего ПК.
+                    Напиши процессор, видеокарту, объём ОЗУ
+                    и накопителей. Расскажи, исправен ли компьютер
+                    и есть ли у него недостатки.
+                    Если чего-то не знаешь — уточним вместе.
+                {% else %}
+                    Привет! Для каких задач нужен компьютер
+                    и какой бюджет рассматриваешь?
+                {% endif %}
             </div>
         </div>
 
-        <div id="chat-status" class="chat-status"
-             role="status" aria-live="polite"></div>
+        <div
+            id="chat-status"
+            class="chat-status"
+            role="status"
+            aria-live="polite"
+        ></div>
 
         <form id="chat-form" class="chat-form">
-            <label class="muted" for="chat-input">Твоё сообщение</label>
+            <label class="muted" for="chat-input">
+                Твоё сообщение
+            </label>
 
-            <textarea id="chat-input"
-                      maxlength="2000"
-                      rows="3"
-                      placeholder="Нужен игровой ПК до 450 000 ₸"
-                      required></textarea>
+            <textarea
+                id="chat-input"
+                maxlength="2000"
+                rows="3"
+                placeholder="{{ 'Например: Ryzen 5 3600, GTX 1660, 16 ГБ ОЗУ, SSD 512 ГБ' if selling else 'Нужен игровой ПК до 450 000 ₸' }}"
+                required
+            ></textarea>
 
             <div class="chat-actions">
-                <small>Enter — отправить · Shift + Enter — новая строка</small>
-                <button id="chat-send" class="button" type="submit">
+                <small>
+                    Enter — отправить ·
+                    Shift + Enter — новая строка
+                </small>
+
+                <button
+                    id="chat-send"
+                    class="button"
+                    type="submit"
+                >
                     Отправить ↗
                 </button>
             </div>

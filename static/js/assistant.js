@@ -1,9 +1,14 @@
+const chatPanel = document.querySelector("#chat-panel");
 const chatForm = document.querySelector("#chat-form");
 const chatInput = document.querySelector("#chat-input");
 const chatMessages = document.querySelector("#chat-messages");
 const chatStatus = document.querySelector("#chat-status");
 const sendButton = document.querySelector("#chat-send");
 const newChatButton = document.querySelector("#new-chat");
+
+const chatMode = chatPanel.dataset.mode === "sell"
+    ? "sell"
+    : "consult";
 
 let history = [];
 let busy = false;
@@ -12,6 +17,7 @@ let busy = false;
 // Показываем сообщение как текст, а не HTML.
 function addMessage(role, text) {
     const message = document.createElement("div");
+
     message.className = `chat-message ${role}`;
     message.textContent = text;
 
@@ -108,6 +114,26 @@ function addProductCards(products) {
 }
 
 
+// Ограничиваем историю числом сообщений и общим размером.
+function getRecentHistory() {
+    const recent = history.slice(-10);
+
+    // Оставляем место для нового сообщения длиной до 2000 символов.
+    while (
+        recent.length
+        && recent.reduce(
+            (total, message) => total + message.content.length,
+            0
+        ) > 13000
+    ) {
+        // Удаляем целую пару: пользователь и помощник.
+        recent.splice(0, 2);
+    }
+
+    return recent;
+}
+
+
 // Отправляем сообщение во Flask.
 chatForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -118,10 +144,8 @@ chatForm.addEventListener("submit", async (event) => {
 
     if (!text) return;
 
-    // Последние пять пар сообщений и новый вопрос.
-    const recentHistory = history.slice(-10);
     const nextHistory = [
-        ...recentHistory,
+        ...getRecentHistory(),
         { role: "user", content: text },
     ];
 
@@ -140,6 +164,7 @@ chatForm.addEventListener("submit", async (event) => {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
+                mode: chatMode,
                 messages: nextHistory,
             }),
         });
@@ -160,7 +185,10 @@ chatForm.addEventListener("submit", async (event) => {
         }
 
         assistantMessage = addMessage("assistant", data.answer);
-        productCards = addProductCards(data.products);
+
+        if (chatMode === "consult") {
+            productCards = addProductCards(data.products);
+        }
 
         // Сохраняем рекомендации для последующих уточнений.
         const rememberedAnswer = JSON.stringify({
@@ -173,7 +201,6 @@ chatForm.addEventListener("submit", async (event) => {
             { role: "assistant", content: rememberedAnswer },
         ];
     } catch (error) {
-        // Убираем незавершённый ответ и возвращаем вопрос в поле.
         userMessage.remove();
         assistantMessage?.remove();
         productCards?.remove();
@@ -185,7 +212,7 @@ chatForm.addEventListener("submit", async (event) => {
         if (error instanceof SyntaxError) {
             message = "Сервер вернул некорректный JSON.";
         } else if (error instanceof TypeError) {
-            message = "Не удалось обработать запрос. Проверь консоль браузера.";
+            message = "Не удалось обработать запрос. Проверь связь с сервером.";
         } else {
             message = error.message || "Не удалось получить ответ.";
         }
@@ -216,7 +243,7 @@ chatInput.addEventListener("keydown", (event) => {
 });
 
 
-// Очищаем сообщения и историю диалога.
+// Очищаем историю, сохраняя выбранный режим.
 newChatButton.addEventListener("click", () => {
     if (busy) return;
 
@@ -226,10 +253,10 @@ newChatButton.addEventListener("click", () => {
 
     setBusy(false);
 
-    addMessage(
-        "assistant",
-        "Начнём заново. Для каких задач нужен ПК и какой бюджет?"
-    );
+    const greeting = chatMode === "sell"
+        ? "Начнём заново. Напиши характеристики компьютера, который хочешь продать, и расскажи о его состоянии. Если не знаешь комплектацию — помогу её определить."
+        : "Начнём заново. Для каких задач нужен ПК и какой бюджет?";
 
+    addMessage("assistant", greeting);
     chatInput.focus();
 });

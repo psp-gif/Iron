@@ -5,7 +5,7 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
-from ai_rules import SYSTEM_PROMPT
+from ai_rules import get_system_prompt
 from catalog import PRODUCTS
 
 
@@ -13,7 +13,6 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Описываем формат ответа, который ожидаем от модели.
 RESPONSE_FORMAT = {
     "type": "json_schema",
     "json_schema": {
@@ -26,7 +25,7 @@ RESPONSE_FORMAT = {
                     "type": "string",
                     "description": (
                         "Краткий ответ на русском обычным текстом, "
-                        "без Markdown. До 150 слов."
+                        "без Markdown. Обычно до 150 слов."
                     ),
                 },
                 "product_ids": {
@@ -34,7 +33,8 @@ RESPONSE_FORMAT = {
                     "items": {"type": "integer"},
                     "description": (
                         "До 3 ID рекомендуемых ПК из каталога. "
-                        "Пустой список, если рекомендация не нужна."
+                        "Пустой список, если рекомендация не нужна "
+                        "или включён режим выкупа."
                     ),
                 },
             },
@@ -49,8 +49,7 @@ class AIError(Exception):
     """Ошибка, которую можно показать пользователю."""
 
 
-def validate_result(result):
-    # Проверяем ответ даже при использовании JSON Schema.
+def validate_result(result, mode="consult"):
     if not isinstance(result, dict):
         raise AIError("ИИ вернул некорректный формат ответа.")
 
@@ -71,38 +70,44 @@ def validate_result(result):
     ):
         raise AIError("ИИ вернул некорректные рекомендации.")
 
+    # В режиме выкупа карточки товаров не используются.
+    if mode == "sell":
+        return {
+            "answer": answer.strip(),
+            "product_ids": [],
+        }
+
     catalog_ids = {product["id"] for product in PRODUCTS}
 
-    # Не допускаем несуществующие товары.
     if any(item not in catalog_ids for item in product_ids):
         raise AIError("ИИ предложил товар, которого нет в каталоге.")
 
-    # Убираем повторяющиеся ID, сохраняя порядок.
-    unique_ids = list(dict.fromkeys(product_ids))
-
     return {
         "answer": answer.strip(),
-        "product_ids": unique_ids,
+        "product_ids": list(dict.fromkeys(product_ids)),
     }
 
 
-def ask_ai(history):
+def ask_ai(history, mode="consult"):
+    if mode not in ("consult", "sell"):
+        raise AIError("Неизвестный режим помощника.")
+
     key = os.getenv("OPENROUTER_API_KEY", "").strip()
     model = os.getenv("OPENROUTER_MODEL", "openrouter/free").strip()
 
     if not key:
         raise AIError("На сервере не настроен API-ключ.")
 
-    catalog_text = json.dumps(PRODUCTS, ensure_ascii=False)
+    system_prompt = get_system_prompt(mode)
+
+    if mode == "consult":
+        catalog_text = json.dumps(PRODUCTS, ensure_ascii=False)
+        system_prompt += "\n\nКаталог Iron в формате JSON:\n" + catalog_text
 
     messages = [
         {
             "role": "system",
-            "content": (
-                SYSTEM_PROMPT
-                + "\n\nКаталог Iron в формате JSON:\n"
-                + catalog_text
-            ),
+            "content": system_prompt,
         },
         *history,
     ]
@@ -128,18 +133,26 @@ def ask_ai(history):
             timeout=(10, 60),
         )
     except requests.Timeout:
-        raise AIError("ИИ не успел ответить. Попробуй ещё раз.") from None
+        raise AIError(
+            "ИИ не успел ответить. Попробуй отправить сообщение ещё раз."
+        ) from None
     except requests.RequestException:
-        raise AIError("Не удалось связаться с ИИ.") from None
+        raise AIError(
+            "Не удалось связаться с ИИ. Попробуй позже."
+        ) from None
 
     if response.status_code in (401, 403):
-        raise AIError("Ошибка доступа к API. Проверь ключ и настройки.")
+        raise AIError(
+            "Нет доступа к ИИ. Проверь настройки API-ключа на сервере."
+        )
 
     if response.status_code == 402:
-        raise AIError("Запрос отклонён из-за баланса или лимита.")
+        raise AIError("Сервис ИИ сообщил о недостаточном балансе.")
 
     if response.status_code == 429:
-        raise AIError("Лимит OpenRouter исчерпан. Попробуй позже.")
+        raise AIError(
+            "Сервис ИИ достиг лимита запросов. Попробуй позже."
+        )
 
     if response.status_code >= 400:
         raise AIError(
@@ -148,14 +161,16 @@ def ask_ai(history):
         )
 
     try:
-        data = response.json()
-        content = data["choices"][0]["message"]["content"]
+        payload = response.json()
+        content = payload["choices"][0]["message"]["content"]
 
         if not isinstance(content, str):
-            raise ValueError
+            raise ValueError("Ответ должен быть строкой.")
 
         result = json.loads(content)
     except (ValueError, KeyError, IndexError, TypeError):
-        raise AIError("ИИ вернул некорректный JSON.") from None
+        raise AIError(
+            "ИИ вернул некорректный JSON. Попробуй ещё раз."
+        ) from None
 
-    return validate_result(result)
+    return validate_result(result, mode=mode)

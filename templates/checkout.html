@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block title %}Оформление заказа — Iron{% endblock %}
+
+{% block scripts %}
+<script
+    defer
+    src="{{ url_for('static', filename='js/checkout.js') }}?v=1"
+></script>
+{% endblock %}
+
+{% block content %}
+<section class="section page">
+    <p class="eyebrow">ПОЧТИ ТВОЙ</p>
+    <h1 class="page-title">Оформление заказа</h1>
+
+    <p class="muted">
+        Выбери ОС, уточни получение заказа
+        и проверь данные перед подтверждением.
+    </p>
+
+    <div id="checkout-status" role="status" aria-live="polite">
+        Загружаем заказ…
+    </div>
+
+    <div id="checkout-content" class="checkout-layout" hidden>
+        <div class="checkout-main">
+            <div id="checkout-products" class="checkout-products"></div>
+
+            <div class="chat-panel">
+                <div class="chat-top">
+                    <span>
+                        <span class="dot"></span>
+                        Оформление с Iron
+                    </span>
+
+                    <a href="/cart">В корзину ↗</a>
+                </div>
+
+                <div
+                    id="checkout-messages"
+                    class="chat-messages"
+                    role="log"
+                    aria-live="polite"
+                    aria-label="Диалог оформления"
+                ></div>
+
+                <div id="os-panel" class="checkout-os" hidden>
+                    <h3>Операционная система</h3>
+
+                    <p class="muted">
+                        Одна ОС для всех ПК в заказе.
+                        Установка бесплатная.
+                        Лицензия Windows не включена.
+                    </p>
+
+                    <form id="os-form">
+                        <fieldset>
+                            <legend class="muted">Выбери один вариант</legend>
+                            <div id="os-options" class="os-options"></div>
+                        </fieldset>
+
+                        <button class="button" type="submit">
+                            Выбрать
+                        </button>
+                    </form>
+                </div>
+
+                <div id="os-confirm-panel" class="checkout-os" hidden>
+                    <p id="os-confirm-text"></p>
+
+                    <button
+                        id="confirm-os"
+                        class="small-button"
+                        type="button"
+                    >
+                        Подтвердить ОС
+                    </button>
+                </div>
+
+                <form id="checkout-form" class="chat-form">
+                    <label class="muted" for="checkout-input">
+                        Сообщение помощнику
+                    </label>
+
+                    <textarea
+                        id="checkout-input"
+                        maxlength="2000"
+                        rows="3"
+                        placeholder="Например: нужна доставка в Алматы"
+                        required
+                    ></textarea>
+
+                    <div class="chat-actions">
+                        <small>
+                            Можно попросить изменить ОС,
+                            город, адрес или пожелания.
+                        </small>
+
+                        <button
+                            id="checkout-send"
+                            class="button"
+                            type="submit"
+                        >
+                            Отправить ↗
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <aside class="cart-summary checkout-summary">
+            <h3>Твой заказ</h3>
+
+            <div id="checkout-summary"></div>
+
+            <button
+                id="change-os"
+                class="small-button"
+                type="button"
+            >
+                Изменить ОС
+            </button>
+
+            <ul id="checkout-missing" class="muted"></ul>
+
+            <button
+                id="confirm-order"
+                class="button"
+                type="button"
+                disabled
+            >
+                Подтвердить заказ
+            </button>
+
+            <div id="payment-panel" hidden>
+                <h3>Демонстрационная оплата</h3>
+
+                <label for="payment-method">Способ оплаты</label>
+                <select id="payment-method"></select>
+
+                <p class="muted">
+                    Платёжные данные не нужны.
+                    Реального списания не будет.
+                </p>
+
+                <button
+                    id="pay-order"
+                    class="button"
+                    type="button"
+                >
+                    Оплатить
+                </button>
+            </div>
+
+            <div id="payment-success" role="status" hidden></div>
+        </aside>
+    </div>
+</section>
+{% endblock %}

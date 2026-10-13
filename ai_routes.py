@@ -1,14 +1,14 @@
 from flask import Blueprint, jsonify, request
 from flask_limiter import Limiter
-from catalog import PRODUCTS
 from flask_limiter.util import get_remote_address
 
 from ai_service import AIError, ask_ai
+from catalog import PRODUCTS
 
 
 ai_blueprint = Blueprint("ai", __name__)
 
-# Ограничения для локальной версии с одним процессом сервера.
+# Для локальной версии с одним процессом сервера.
 limiter = Limiter(
     key_func=get_remote_address,
     storage_uri="memory://",
@@ -17,6 +17,8 @@ limiter = Limiter(
 MAX_MESSAGES = 12
 MAX_MESSAGE_LENGTH = 4000
 MAX_HISTORY_LENGTH = 16000
+
+ALLOWED_MODES = ("consult", "sell")
 
 
 def validate_history(history):
@@ -32,7 +34,6 @@ def validate_history(history):
         if not isinstance(message, dict):
             return False
 
-        # Разрешаем только чередование пользователь → помощник.
         expected_role = "user" if index % 2 == 0 else "assistant"
 
         if message.get("role") != expected_role:
@@ -65,6 +66,11 @@ def chat():
     if not isinstance(data, dict):
         return jsonify(error="Некорректный запрос."), 400
 
+    mode = data.get("mode", "consult")
+
+    if mode not in ALLOWED_MODES:
+        return jsonify(error="Неизвестный режим помощника."), 400
+
     history = data.get("messages")
 
     if not validate_history(history):
@@ -72,14 +78,16 @@ def chat():
             error="Некорректная или слишком длинная история. Начни новый чат."
         ), 400
 
-    # Не передаём дополнительные поля из пользовательского запроса.
     clean_history = [
-        {"role": message["role"], "content": message["content"]}
+        {
+            "role": message["role"],
+            "content": message["content"],
+        }
         for message in history
     ]
-    
+
     try:
-        result = ask_ai(clean_history)
+        result = ask_ai(clean_history, mode=mode)
     except AIError as error:
         return jsonify(error=str(error)), 503
 
@@ -103,5 +111,8 @@ def chat():
 @ai_blueprint.errorhandler(429)
 def too_many_requests(error):
     return jsonify(
-        error="Слишком много сообщений. Подожди минуту; если достигнут дневной лимит — попробуй завтра."
+        error=(
+            "Слишком много сообщений. Подожди минуту; "
+            "если достигнут дневной лимит — попробуй завтра."
+        )
     ), 429
