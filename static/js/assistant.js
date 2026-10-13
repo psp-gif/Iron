@@ -14,12 +14,17 @@ let history = [];
 let busy = false;
 
 
-// Показываем сообщение как текст, а не HTML.
 function addMessage(role, text) {
     const message = document.createElement("div");
-
     message.className = `chat-message ${role}`;
-    message.textContent = text;
+
+    const displayedText = role === "assistant"
+        ? text
+            .replace(/\*\*([^*\n]+)\*\*/g, "$1")
+            .replace(/^\s*#{1,6}\s+/gm, "")
+        : text;
+
+    message.textContent = displayedText;
 
     chatMessages.append(message);
     chatMessages.scrollTop = chatMessages.scrollHeight;

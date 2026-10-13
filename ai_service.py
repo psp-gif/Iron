@@ -77,6 +77,19 @@ def validate_result(result, mode="consult"):
             "product_ids": [],
         }
 
+    technical_markers = (
+        "'role':",
+        '"role":',
+        "'product_ids':",
+        '"product_ids":',
+    )
+
+    if any(marker in answer for marker in technical_markers):
+        raise AIError(
+            "ИИ вернул служебные данные вместо ответа. "
+            "Попробуй отправить сообщение ещё раз."
+        )
+
     catalog_ids = {product["id"] for product in PRODUCTS}
 
     if any(item not in catalog_ids for item in product_ids):
