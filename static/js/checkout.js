@@ -119,7 +119,7 @@
             "span",
             "",
             isChat
-                ? "Iron формулирует ответ…"
+                ? "Bit формулирует ответ…"
                 : "Обновляем заказ…"
         );
 
@@ -219,7 +219,7 @@
     }
 
 
-    function renderSummary() {
+        function renderSummary() {
         summary.replaceChildren();
 
         const receiving = order.shipping === "delivery"
@@ -241,15 +241,47 @@
         ];
 
         if (order.shipping === "delivery") {
-            lines.push(["Адрес", order.address || "Не указан"]);
+            lines.push([
+                "Адрес",
+                order.address || "Не указан",
+            ]);
+
+            if (order.delivery_estimate) {
+                lines.push([
+                    "Ориентировочный срок",
+                    order.delivery_estimate,
+                ]);
+            }
+
+            lines.push([
+                "Желаемое время",
+                order.desired_time == null
+                    ? "Не уточнено"
+                    : order.desired_time || "Без предпочтений",
+            ]);
         }
 
         if (order.shipping === "pickup") {
-            lines.push(["Склад", order.warehouse || "Выбери город"]);
+            lines.push([
+                "Адрес склада",
+                order.warehouse || "Выбери город",
+            ]);
+
+            if (order.warehouse_hours) {
+                lines.push([
+                    "Часы работы",
+                    order.warehouse_hours,
+                ]);
+            }
+
+            lines.push([
+                "Получение",
+                "После уведомления о готовности",
+            ]);
         }
 
         lines.push([
-            "Пожелания",
+            "Другие пожелания",
             order.wishes === null
                 ? "Не уточнены"
                 : order.wishes || "Без пожеланий",
@@ -267,7 +299,11 @@
         });
 
         summary.append(
-            node("p", "", `Компьютеры: ${money(order.subtotal)}`),
+            node(
+                "p",
+                "",
+                `Компьютеры: ${money(order.subtotal)}`
+            ),
             node(
                 "p",
                 "",
@@ -285,6 +321,17 @@
                 )
             )
         );
+
+        if (order.shipping === "delivery") {
+            summary.append(
+                node(
+                    "small",
+                    "muted",
+                    "Срок ориентировочный. Желаемое время "
+                    + "учитывается, но не гарантируется."
+                )
+            );
+        }
 
         missing.replaceChildren();
 
@@ -316,7 +363,7 @@
 
         addMessage(
             "assistant",
-            "Привет! Здесь твои компьютеры из корзины. "
+            "Привет! Я Bit, помощник Iron. Здесь твои компьютеры из корзины. "
             + "Сначала выбери ОС в панели ниже, затем уточним "
             + "доставку или самовывоз и пожелания. "
             + "ОС можно изменить до подтверждения заказа."
@@ -484,10 +531,36 @@
     });
 
 
-    payOrder.addEventListener("click", () => {
-        run("/api/checkout/action", {
-            action: "pay",
-            method: paymentMethod.value,
+        payOrder.addEventListener("click", () => {
+        if (
+            busy
+            || !order
+            || order.status !== "confirmed"
+        ) {
+            return;
+        }
+
+        window.IronPayment.open({
+            order,
+
+            pay: async method => {
+                const completed = await run(
+                    "/api/checkout/action",
+                    {
+                        action: "pay",
+                        method,
+                    }
+                );
+
+                if (!completed) {
+                    throw new Error(
+                        status.textContent
+                        || "Не удалось получить результат оплаты."
+                    );
+                }
+
+                return order;
+            },
         });
     });
 

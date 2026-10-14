@@ -41,7 +41,7 @@ function setBusy(value) {
     newChatButton.disabled = value;
     chatInput.disabled = value;
 
-    chatStatus.textContent = value ? "Iron готовит ответ…" : "";
+    chatStatus.textContent = value ? "Bit готовит ответ…" : "";
     chatStatus.classList.toggle("thinking", value);
 }
 
@@ -258,9 +258,9 @@ newChatButton.addEventListener("click", () => {
 
     setBusy(false);
 
-    const greeting = chatMode === "sell"
-        ? "Начнём заново. Напиши характеристики компьютера, который хочешь продать, и расскажи о его состоянии. Если не знаешь комплектацию — помогу её определить."
-        : "Начнём заново. Для каких задач нужен ПК и какой бюджет?";
+        const greeting = chatMode === "sell"
+        ? "Привет! Я Bit. Начнём заново: расскажи о характеристиках и состоянии компьютера, который хочешь продать."
+        : "Привет! Я Bit. Начнём заново: для каких задач нужен ПК и какой бюджет?";
 
     addMessage("assistant", greeting);
     chatInput.focus();

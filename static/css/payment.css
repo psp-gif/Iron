@@ -1,0 +1,413 @@
+.iron-pay-dialog {
+    --pay-bg: #191914;
+    --pay-text: #f4f4e9;
+    --pay-muted: #a2a297;
+    --pay-line: #37372e;
+    --pay-soft: #23231c;
+
+    width: min(520px, calc(100vw - 28px));
+    max-width: none;
+    max-height: calc(100dvh - 28px);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--pay-text);
+    overflow: visible;
+    font-family: inherit;
+}
+
+:root[data-theme="light"] .iron-pay-dialog {
+    --pay-bg: #fafaf5;
+    --pay-text: #1b1b16;
+    --pay-muted: #68685f;
+    --pay-line: #deded3;
+    --pay-soft: #eeeee5;
+}
+
+.iron-pay-dialog::backdrop {
+    background: rgba(8, 8, 5, 0.72);
+    backdrop-filter: blur(7px);
+}
+
+.iron-pay-sheet {
+    position: relative;
+    z-index: 1;
+    max-height: calc(100dvh - 28px);
+    padding: 28px;
+    overflow-y: auto;
+    border: 1px solid var(--pay-line);
+    border-radius: 26px;
+    background: var(--pay-bg);
+    box-shadow: 0 30px 100px rgba(0, 0, 0, 0.35);
+    animation: iron-pay-enter 0.3s ease-out;
+}
+
+.iron-pay-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 26px;
+}
+
+.iron-pay-brand {
+    font-size: 26px;
+    font-weight: 800;
+}
+
+.iron-pay-brand span {
+    margin-left: 3px;
+    color: #a1bd00;
+    font-size: 14px;
+}
+
+.iron-pay-demo {
+    margin-left: auto;
+    color: var(--pay-muted);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+}
+
+.iron-pay-dialog .iron-pay-close {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--pay-line);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--pay-text);
+    font-size: 25px;
+    cursor: pointer;
+}
+
+.iron-pay-eyebrow {
+    color: var(--pay-muted);
+    font-size: 10px;
+    letter-spacing: 0.17em;
+}
+
+.iron-pay-dialog h2 {
+    margin: 10px 0;
+    color: var(--pay-text);
+    font-size: clamp(28px, 5vw, 36px);
+    line-height: 1.12;
+    letter-spacing: -0.04em;
+}
+
+.iron-pay-order {
+    color: var(--pay-muted);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.iron-pay-totals {
+    margin: 22px 0;
+    padding: 18px;
+    border: 1px solid var(--pay-line);
+    border-radius: 16px;
+    background: var(--pay-soft);
+}
+
+.iron-pay-totals > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    font-size: 13px;
+}
+
+.iron-pay-totals > div + div {
+    margin-top: 10px;
+}
+
+.iron-pay-totals span {
+    color: var(--pay-muted);
+}
+
+.iron-pay-totals strong {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.iron-pay-totals .iron-pay-total {
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--pay-line);
+}
+
+.iron-pay-total strong {
+    font-size: clamp(24px, 5vw, 30px);
+    letter-spacing: -0.04em;
+}
+
+.iron-pay-label {
+    font-size: 13px;
+}
+
+.iron-pay-methods {
+    display: grid;
+    gap: 12px;
+}
+
+.iron-pay-dialog .iron-pay-button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 64px;
+    padding: 14px 20px;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    font: 500 23px/1.2 system-ui, sans-serif;
+    cursor: pointer;
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.iron-pay-button img {
+    width: 76px;
+    height: 31px;
+    object-fit: contain;
+}
+
+.iron-pay-dialog .iron-pay-google {
+    background: #1a73e8;
+    color: white;
+}
+
+.iron-pay-dialog .iron-pay-apple {
+    background: #ffffff;
+    color: #111111;
+    border-color: #dedede;
+}
+
+.iron-pay-apple-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 28px;
+}
+
+.iron-pay-apple img {
+    width: 25px;
+    height: 31px;
+    filter: brightness(0);
+}
+
+.iron-pay-dialog .iron-pay-visa {
+    background: #171d59;
+    color: white;
+    border-color: #333b87;
+}
+
+.iron-pay-visa img {
+    width: 82px;
+    height: 28px;
+    filter: brightness(0) invert(1);
+}
+
+.iron-pay-button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        110deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.2) 50%,
+        transparent 80%
+    );
+    transform: translateX(-150%);
+    transition: transform 0.65s ease;
+    pointer-events: none;
+}
+
+.iron-pay-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.iron-pay-button:hover:not(:disabled)::after {
+    transform: translateX(150%);
+}
+
+.iron-pay-button:active:not(:disabled) {
+    transform: scale(0.975);
+}
+
+.iron-pay-dialog button:focus-visible {
+    outline: 3px solid #a1bd00;
+    outline-offset: 4px;
+}
+
+.iron-pay-dialog button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.iron-pay-note {
+    margin: 18px 0 0;
+    color: var(--pay-muted);
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.iron-pay-error {
+    padding: 12px;
+    border: 1px solid #c85555;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.iron-pay-processing,
+.iron-pay-success {
+    padding: 30px 0;
+    text-align: center;
+}
+
+.iron-pay-processing p,
+.iron-pay-success p {
+    color: var(--pay-muted);
+}
+
+.iron-pay-spinner {
+    width: 64px;
+    height: 64px;
+    margin: 12px auto 30px;
+    border: 3px solid var(--pay-line);
+    border-top-color: #a1bd00;
+    border-radius: 50%;
+    animation: iron-pay-spin 0.8s linear infinite;
+}
+
+.iron-pay-check {
+    display: grid;
+    place-items: center;
+    width: 88px;
+    height: 88px;
+    margin: 0 auto 28px;
+    border-radius: 50%;
+    background: #18a95b;
+    box-shadow: 0 0 0 10px rgba(24, 169, 91, 0.1);
+    animation: iron-pay-pop 0.45s ease-out;
+}
+
+.iron-pay-check svg {
+    width: 52px;
+    height: 52px;
+}
+
+.iron-pay-check path {
+    stroke-dasharray: 50;
+    stroke-dashoffset: 50;
+    animation: iron-pay-tick 0.5s 0.15s ease forwards;
+}
+
+.iron-pay-success-amount {
+    display: block;
+    margin: 24px 0 10px;
+    font-size: 30px;
+}
+
+.iron-pay-success-order,
+.iron-pay-success-method {
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.iron-pay-done {
+    width: 100%;
+    margin-top: 20px;
+}
+
+.iron-pay-confetti {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.iron-pay-dialog [hidden] {
+    display: none !important;
+}
+
+@keyframes iron-pay-enter {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes iron-pay-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes iron-pay-tick {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes iron-pay-pop {
+    0% {
+        opacity: 0;
+        transform: scale(0.7);
+    }
+
+    70% {
+        opacity: 1;
+        transform: scale(1.08);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+@media (max-width: 420px) {
+    .iron-pay-sheet {
+        padding: 22px 18px;
+    }
+
+    .iron-pay-dialog .iron-pay-button {
+        min-height: 60px;
+        font-size: 21px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .iron-pay-sheet,
+    .iron-pay-spinner,
+    .iron-pay-check,
+    .iron-pay-check path {
+        animation: none;
+    }
+
+    .iron-pay-check path {
+        stroke-dashoffset: 0;
+    }
+
+    .iron-pay-button,
+    .iron-pay-button::after {
+        transition: none;
+    }
+
+    .iron-pay-button:hover:not(:disabled),
+    .iron-pay-button:active:not(:disabled) {
+        transform: none;
+    }
+}

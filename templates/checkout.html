@@ -3,9 +3,19 @@
 {% block title %}Оформление заказа — Iron{% endblock %}
 
 {% block scripts %}
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/payment.css') }}?v=1"
+>
+
 <script
     defer
-    src="{{ url_for('static', filename='js/checkout.js') }}?v=1"
+    src="{{ url_for('static', filename='js/payment.js') }}?v=1"
+></script>
+
+<script
+    defer
+    src="{{ url_for('static', filename='js/checkout.js') }}?v=4"
 ></script>
 {% endblock %}
 
@@ -31,7 +41,7 @@
                 <div class="chat-top">
                     <span>
                         <span class="dot"></span>
-                        Оформление с Iron
+                        Оформление с Bit
                     </span>
 
                     <a href="/cart">В корзину ↗</a>
@@ -133,15 +143,14 @@
                 Подтвердить заказ
             </button>
 
-            <div id="payment-panel" hidden>
-                <h3>Демонстрационная оплата</h3>
+                        <div id="payment-panel" hidden>
+                <h3>Заказ подтверждён</h3>
 
-                <label for="payment-method">Способ оплаты</label>
-                <select id="payment-method"></select>
+                <!-- Поле сохраняется для совместимости с checkout.js. -->
+                <select id="payment-method" hidden></select>
 
                 <p class="muted">
-                    Платёжные данные не нужны.
-                    Реального списания не будет.
+                    Остался последний шаг — выбрать способ оплаты.
                 </p>
 
                 <button
@@ -149,7 +158,7 @@
                     class="button"
                     type="button"
                 >
-                    Оплатить
+                    Перейти к оплате ↗
                 </button>
             </div>
 

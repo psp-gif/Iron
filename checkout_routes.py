@@ -22,10 +22,7 @@ OS_OPTIONS = [
     "Без ОС",
 ]
 
-WAREHOUSES = {
-    "Астана": "Учебный склад Iron в Астане",
-    "Алматы": "Учебный склад Iron в Алматы",
-}
+from shipping_rules import WAREHOUSES, delivery_details
 
 PAYMENTS = [
     "Visa / Mastercard",
@@ -104,48 +101,33 @@ def missing_fields(order):
 
     if len(order["city"]) < 2:
         missing.append("Укажи город в Казахстане")
+
     elif (
         order["shipping"] == "pickup"
         and order["city"] not in WAREHOUSES
     ):
         missing.append("Для самовывоза выбери Астану или Алматы")
 
-    if (
-        order["shipping"] == "delivery"
-        and len(order["address"]) < 5
-    ):
-        missing.append("Укажи адрес доставки")
+    if order["shipping"] == "delivery":
+        if len(order["address"]) < 5:
+            missing.append("Укажи адрес доставки")
+
+        if order.get("desired_time") is None:
+            missing.append(
+                "Укажи желаемое время доставки "
+                "или напиши, что время не важно"
+            )
 
     if order["wishes"] is None:
         missing.append("Укажи пожелания или напиши, что их нет")
 
     return missing
 
-
 def public_order(order):
     subtotal = sum(
         product["price"] * product["quantity"]
         for product in order["items"]
     )
-
-    shipping = order["shipping"]
-    city = order["city"]
-
-    delivery_known = (
-        (shipping == "delivery" and len(city) >= 2)
-        or (shipping == "pickup" and city in WAREHOUSES)
-    )
-
-    delivery = 0
-
-    if (
-        shipping == "delivery"
-        and city
-        and city not in WAREHOUSES
-    ):
-        delivery = 5000
-
-    missing = missing_fields(order)
 
     fields = (
         "id",
@@ -166,16 +148,15 @@ def public_order(order):
         for key in fields
     }
 
+    delivery = delivery_details(order)
+    missing = missing_fields(order)
+
+    result.update(delivery)
+
     result.update(
-        warehouse=(
-            WAREHOUSES.get(city, "")
-            if shipping == "pickup"
-            else ""
-        ),
+        desired_time=order.get("desired_time"),
         subtotal=subtotal,
-        delivery=delivery,
-        total=subtotal + delivery,
-        delivery_known=bool(delivery_known),
+        total=subtotal + delivery["delivery"],
         missing=missing,
         ready=not missing,
         os_options=OS_OPTIONS,
@@ -195,8 +176,6 @@ def append_messages(order, user, answer):
 
 
 def next_step(order):
-    """Следующий вопрос определяется состоянием заказа."""
-
     if not order["os"]:
         return "Выбери ОС в панели ниже."
 
@@ -207,14 +186,49 @@ def next_step(order):
             "Изменить её можно до подтверждения заказа."
         )
 
-    missing = missing_fields(order)
+    if order["shipping"] not in ("delivery", "pickup"):
+        return (
+            "Как тебе удобнее получить заказ: "
+            "доставка или самовывоз?"
+        )
 
-    if missing:
-        return "Следующий шаг: " + missing[0] + "."
+    if len(order["city"]) < 2:
+        return "В каком городе Казахстана получишь заказ?"
+
+    if (
+        order["shipping"] == "pickup"
+        and order["city"] not in WAREHOUSES
+    ):
+        return (
+            "Самовывоз доступен в Астане и Алматы. "
+            "Какой склад тебе удобнее?"
+        )
+
+    if order["shipping"] == "delivery":
+        if len(order["address"]) < 5:
+            return (
+                "Укажи адрес доставки: "
+                "улицу, дом и квартиру, если она есть."
+            )
+
+        if order.get("desired_time") is None:
+            return (
+                "В какое время тебе удобнее получить доставку? "
+                "Можно ответить своими словами или написать, "
+                "что время не важно. Учтём пожелание, "
+                "но точное время не гарантируется."
+            )
+
+    if order["wishes"] is None:
+        return (
+            "Есть другие пожелания к заказу? "
+            "Если нет, так и напиши."
+        )
 
     return (
-        "Данные заполнены. Проверь сводку и нажми "
-        "«Подтвердить заказ», если всё верно."
+        "Данные заполнены. Проверь товары, ОС, получение "
+        "и итоговую сумму. Если всё верно, "
+        "нажми «Подтвердить заказ»."
     )
 
 
@@ -368,6 +382,7 @@ def start():
             "city": "",
             "address": "",
             "wishes": None,
+            "desired_time": None,
             "status": "draft",
             "payment": None,
             "messages": [],
@@ -510,11 +525,21 @@ FIELDS = {
     "city": {"type": ["string", "null"]},
     "address": {"type": ["string", "null"]},
     "wishes": {"type": ["string", "null"]},
+    "desired_time": {
+        "type": ["string", "null"],
+        "description": (
+            "Явно сообщённое пожелание по времени доставки. "
+            "Пустая строка, если пользователь говорит, "
+            "что время не важно. Null, если время не обсуждалось."
+        ),
+    },
 }
 
-
 PROMPT = """
-Ты помощник оформления Iron.
+Тебя зовут Bit. Ты — помощник оформления заказов магазина Iron.
+Всегда пиши своё имя латиницей: Bit.
+Если спрашивают имя, отвечай: «Я Bit, помощник Iron».
+Iron — название магазина, а не твоё имя.
 Отвечай на русском кратко обычным текстом в answer.
 Никогда не помещай JSON или программный код внутрь answer.
 
@@ -591,6 +616,55 @@ confirm_os=true, если ОС выбрана.
 передаче заказа сотруднику или вызове курьера.
 """
 
+PROMPT += """
+Дополнительные правила доставки и самовывоза:
+
+Точные стоимость, сроки, адрес склада и часы работы
+передаются сервером в состоянии заказа.
+Используй delivery_terms, delivery_estimate,
+warehouse и warehouse_hours.
+Не придумывай другие адреса и сроки.
+
+После выбора получения и города сообщи стоимость и сроки.
+При смене города или способа получения уточни новые условия.
+
+desired_time — отдельное пожелание по времени доставки.
+Уточняй его только для доставки, после уточнения адреса.
+Спрашивай: «В какое время тебе удобнее получить доставку?»
+Не предлагай собственные варианты, кнопки или интервалы.
+
+Понимай свободный ответ: «вечером», «после 17:00»,
+«в первой половине дня» и другие пожелания.
+Сохраняй смысл ответа в desired_time.
+
+Если пользователь отвечает, что время не важно,
+нет предпочтений или удобно в любое время,
+передай desired_time как пустую строку.
+
+Если пользователь не сообщал пожелание по времени,
+передай desired_time=null.
+Если речь о времени работы склада или пользователь
+только спрашивает сроки доставки, не записывай это
+как его пожелание по времени.
+
+Сообщи, что желаемое время учитывается как пожелание,
+но точное время не гарантируется.
+Не обещай доставку в выбранный час или в конкретный день.
+
+Если пользователь сообщает только желаемое время,
+не записывай его одновременно в wishes.
+wishes — остальные пожелания к заказу.
+Уже сообщённое отсутствие остальных пожеланий сохраняется.
+
+Самовывоз не требует desired_time и домашнего адреса.
+Сообщи адрес и часы работы выбранного склада.
+Получение после уведомления о готовности.
+Не утверждай, что заказ уже готов к выдаче.
+
+Не проси повторно подтверждать самовывоз отдельным сообщением:
+после заполнения данных есть кнопка «Подтвердить заказ».
+"""
+
 
 def validate_result(result):
     if (
@@ -618,6 +692,7 @@ def validate_result(result):
         ("city", 80),
         ("address", 250),
         ("wishes", 500),
+        ("desired_time", 200),
     ):
         value = result[field]
 
@@ -818,11 +893,14 @@ def chat():
     with locked_order(order):
         require_draft(order)
 
-        # До успешной проверки ответа заказ не изменяется.
+        previous_shipping = order["shipping"]
+        previous_city = order["city"]
+
         result = ask_checkout(order, text.strip())
 
         if result["change_os"]:
             order["os_confirmed"] = False
+
         elif (
             result["confirm_os"]
             and order["os"] in OS_OPTIONS
@@ -835,6 +913,7 @@ def chat():
         ):
             order["shipping"] = result["shipping"]
             order["address"] = ""
+            order["desired_time"] = None
 
         if result["city"] is not None:
             city = normalize_city(result["city"])
@@ -843,16 +922,46 @@ def chat():
                 order["city"] = city
                 order["address"] = ""
 
-        if (
-            result["address"] is not None
-            and order["shipping"] == "delivery"
-        ):
-            order["address"] = result["address"]
+        if order["shipping"] == "delivery":
+            if result["address"] is not None:
+                order["address"] = result["address"]
+
+            if result["desired_time"] is not None:
+                order["desired_time"] = result["desired_time"]
+
+        else:
+            # Для самовывоза эти сведения не используются.
+            order["address"] = ""
+            order["desired_time"] = None
 
         if result["wishes"] is not None:
             order["wishes"] = result["wishes"]
 
         answer = readable_answer(order, result["answer"])
+
+        receiving_changed = (
+            order["shipping"] != previous_shipping
+            or order["city"] != previous_city
+        )
+
+        # Условия берём из кода, чтобы стоимость и сроки
+        # были явно сообщены при выборе или смене получения.
+        if receiving_changed:
+            terms = delivery_details(order)["delivery_terms"]
+
+            if terms:
+                answer = terms + "\n\n" + answer
+
+        if (
+            order["shipping"] == "delivery"
+            and result["desired_time"] is not None
+        ):
+            answer += (
+                "\n\nПожелание по времени сохранено. "
+                "Точное время доставки не гарантируется."
+                if order["desired_time"]
+                else "\n\nВремя доставки — без предпочтений."
+            )
 
         append_messages(order, text.strip(), answer)
 
